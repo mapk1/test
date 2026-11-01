@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101a2b">
+<title>Record Gaji Peribadi</title>
+<style>
+:root{--bg:#eef3f8;--ink:#172235;--muted:#64748b;--blue:#d9ecff;--blue2:#b8dcfb;--pink:#f3c9dc;--line:#8b9bad;--green:#16a34a;--navy:#101a2b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:var(--navy);color:white;padding:18px 16px 20px;position:sticky;top:0;z-index:5;box-shadow:0 3px 12px #0002}
+h1{font-size:21px;margin:0 0 4px}header p{margin:0;color:#c4d2e4;font-size:12px}
+main{max-width:1050px;margin:auto;padding:14px}
+.toolbar,.settings,.summary,.table-wrap{background:white;border:1px solid #d7e0ea;border-radius:14px;padding:13px;margin-bottom:13px;box-shadow:0 2px 8px #10203008}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:end}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+label{font-size:12px;color:var(--muted);font-weight:700}
+input,select,button{font:inherit}
+input[type=month],input[type=number]{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:white;color:var(--ink);min-width:0}
+button{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}
+.primary{background:#a3e635;color:#1a2b08}.secondary{background:#e7eef6;color:#24344a}.danger{background:#fee2e2;color:#991b1b}
+.settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+h2{font-size:15px;margin:0 0 10px}
+.table-wrap{padding:0;overflow:hidden}
+.table-title{padding:13px 14px 5px;font-weight:800}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+th{background:#d9dee7;color:#273449;padding:10px 7px;text-align:center;border:1px solid #aeb9c7}
+td{background:var(--blue);padding:6px;border:1px solid #aeb9c7;text-align:center}
+td.date{font-weight:700;white-space:nowrap}
+td.gift{background:var(--pink)}
+td input[type=number]{padding:8px 5px;text-align:center;border:1px solid #b7c8d9;border-radius:6px;background:#ffffffd9;width:100%;min-width:78px}
+td input[type=checkbox]{width:22px;height:22px;accent-color:#84cc16;vertical-align:middle}
+tfoot td{font-weight:800;background:#e5e7eb}
+.summary h2{margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.metric{background:#e3f1fc;border-radius:10px;padding:12px;text-align:center}
+.metric span{display:block;font-size:11px;color:#52647a;font-weight:700}
+.metric strong{display:block;font-size:19px;margin-top:4px;overflow-wrap:anywhere}
+.metric.highlight{background:#fef08a}.metric.net{background:#c7e5ff}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin:10px 2px}
+.status{font-size:12px;color:#15803d;font-weight:700;margin-left:auto}
+@media(max-width:600px){main{padding:10px}.settings{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:span 2}.toolbar .field{min-width:calc(50% - 8px)}header{position:static}}
+</style>
+</head>
+<body>
+<header><h1>💰 Record Gaji Peribadi</h1><p>Rekod kehadiran, pendapatan dan potongan bulanan</p></header>
+<main>
+  <section class="toolbar">
+    <div class="field"><label for="month">BULAN REKOD</label><input id="month" type="month"></div>
+    <button class="primary" id="exportCsv">Export CSV</button>
+    <button class="secondary" id="backup">Backup JSON</button>
+    <button class="secondary" id="restoreBtn">Import Backup</button>
+    <input id="restoreFile" type="file" accept="application/json" hidden>
+    <span class="status" id="saveStatus">● Auto-save aktif</span>
+  </section>
+
+  <section class="settings">
+    <div class="field"><label for="rate">GAJI SEHARI (RM)</label><input id="rate" type="number" min="0" step="0.01" value="55"></div>
+    <div class="field"><label for="bonus">MONTHLY BONUS (RM)</label><input id="bonus" type="number" step="0.01" value="0"></div>
+    <div class="field"><label for="currency">MATA WANG</label><select id="currency"><option value="RM">RM (MYR)</option><option value="IDR">Rp (IDR)</option><option value="USD">$ (USD)</option><option value="SGD">S$ (SGD)</option></select></div>
+  </section>
+
+  <section class="table-wrap">
+    <div class="table-title">WORKING — Rekod Harian</div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tarikh</th><th>Present (✓ / X)</th><th>Sales / Days (RM)</th><th>Advanced (RM)</th><th>Gift (RM)</th></tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><td>TOTAL</td><td id="presentTotal">0 hari</td><td id="salesTotal">0.00</td><td id="advanceTotal">0.00</td><td id="giftTotal">0.00</td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="summary">
+    <h2>Ringkasan Gaji Bulanan</h2>
+    <div class="cards">
+      <div class="metric"><span>TOTAL WORKING DAYS</span><strong id="days">0</strong></div>
+      <div class="metric"><span>WAGES</span><strong id="wages">RM 0.00</strong></div>
+      <div class="metric"><span>SALES / DAYS</span><strong id="sales">RM 0.00</strong></div>
+      <div class="metric"><span>GIFT</span><strong id="gift">RM 0.00</strong></div>
+      <div class="metric"><span>DEDUCTION (ADVANCED)</span><strong id="deduction">RM 0.00</strong></div>
+      <div class="metric"><span>MONTHLY BONUS</span><strong id="bonusView">RM 0.00</strong></div>
+      <div class="metric"><span>GROSS INCOME</span><strong id="gross">RM 0.00</strong></div>
+      <div class="metric highlight"><span>NET PAY</span><strong id="net">RM 0.00</strong></div>
+      <div class="metric net"><span>STATUS</span><strong id="status">Belum dikira</strong></div>
+    </div>
+    <p class="note">Formula: Wages = jumlah hari hadir × gaji sehari. Gross Income = Wages + Sales/Days + Gift + Monthly Bonus. Net Pay = Gross Income − Advanced. Masukkan nilai bonus positif untuk tambahan atau negatif untuk penalti/potongan.</p>
+  </section>
+  <p class="note">Data disimpan automatik pada browser/peranti ini. Jangan padam data browser sebelum membuat Backup JSON. Export CSV boleh dibuka menggunakan Excel atau Google Sheets.</p>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const today = new Date();
+ const monthInput = $('month');
+ monthInput.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+ const STORE='personal_salary_records_v1';
+ let all={};
+ try{all=JSON.parse(localStorage.getItem(STORE)||'{}')}catch(e){all={}}
+ const key=()=>monthInput.value;
+ const blank=()=>({rate:55,bonus:0,currency:'RM',days:{}});
+ const getData=()=>{if(!all[key()]) all[key()]=blank(); return all[key()]};
+ const money=n=>`${getData().currency} ${Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+ function persist(){
+   localStorage.setItem(STORE,JSON.stringify(all));
+   $('saveStatus').textContent='● Disimpan automatik';
+   clearTimeout(persist.timer);
+   persist.timer=setTimeout(()=>$('saveStatus').textContent='● Auto-save aktif',1500);
+ }
+ function render(){
+   const d=getData(); $('rate').value=d.rate??55; $('bonus').value=d.bonus??0; $('currency').value=d.currency||'RM';
+   const [y,m]=key().split('-').map(Number); if(!y||!m)return;
+   const count=new Date(y,m,0).getDate(); const body=$('rows'); body.innerHTML='';
+   for(let day=1;day<=count;day++){
+     const date=`${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+     const rec=d.days[date]||{present:false,sales:'',advance:'',gift:''};
+     const tr=document.createElement('tr');
+     tr.innerHTML=`<td class="date">${day}/${m}/${y}</td>
+       <td><input type="checkbox" aria-label="Hadir ${date}" data-date="${date}" data-field="present"></td>
+       <td><input type="number" min="0" step="0.01" placeholder="0.00" data-date="${date}" data-field="sales"></td>
+       <td><input type="number" min="0" step="0.01" placeholder="0.00" data-date="${date}" data-field="advance"></td>
+       <td class="gift"><input type="number" min="0" step="0.01" placeholder="0.00" data-date="${date}" data-field="gift"></td>`;
+     const check=tr.querySelector('[data-field="present"]'); check.checked=!!rec.present;
+     ['sales','advance','gift'].forEach(f=>tr.querySelector(`[data-field="${f}"]`).value=rec[f]??'');
+     body.appendChild(tr);
+   }
+   body.querySelectorAll('input').forEach(el=>{
+     el.addEventListener('change',()=>{
+       const r=getData().days[el.dataset.date]||{present:false,sales:'',advance:'',gift:''};
+       r[el.dataset.field]=el.type==='checkbox'?el.checked:el.value;
+       getData().days[el.dataset.date]=r; persist(); calculate();
+     });
+     el.addEventListener('input',()=>{
+       if(el.type==='number'){
+         const r=getData().days[el.dataset.date]||{present:false,sales:'',advance:'',gift:''};
+         r[el.dataset.field]=el.value;getData().days[el.dataset.date]=r;persist();calculate();
+       }
+     });
+   });
+   calculate();
+ }
+ function calculate(){
+   const d=getData(); let days=0,sales=0,advance=0,gift=0;
+   Object.values(d.days||{}).forEach(r=>{if(r.present)days++;sales+=num(r.sales);advance+=num(r.advance);gift+=num(r.gift)});
+   const wages=days*num(d.rate),bonus=num(d.bonus),gross=wages+sales+gift+bonus,net=gross-advance;
+   $('presentTotal').textContent=days+' hari';$('salesTotal').textContent=sales.toFixed(2);
+   $('advanceTotal').textContent=advance.toFixed(2);$('giftTotal').textContent=gift.toFixed(2);
+   $('days').textContent=days;$('wages').textContent=money(wages);$('sales').textContent=money(sales);
+   $('gift').textContent=money(gift);$('deduction').textContent=money(advance);$('bonusView').textContent=money(bonus);
+   $('gross').textContent=money(gross);$('net').textContent=money(net);
+   $('status').textContent=days?'Dikira':'Belum bekerja';
+ }
+ ['rate','bonus','currency'].forEach(id=>$(id).addEventListener('input',()=>{
+   const d=getData();if(id==='rate')d.rate=num($(id).value);if(id==='bonus')d.bonus=num($(id).value);if(id==='currency')d.currency=$(id).value;
+   persist();calculate();
+ }));
+ monthInput.addEventListener('change',render);
+ $('exportCsv').onclick=()=>{
+   const d=getData(),[y,m]=key().split('-');let lines=[['Tarikh','Present','Sales/Days','Advanced','Gift']];
+   const daysInMonth=new Date(Number(y),Number(m),0).getDate();
+   for(let i=1;i<=daysInMonth;i++){const date=`${y}-${m}-${String(i).padStart(2,'0')}`,r=d.days[date]||{};lines.push([date,r.present?'Ya':'Tidak',r.sales||0,r.advance||0,r.gift||0]);}
+   const csv=lines.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+   download(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),`rekod-gaji-${key()}.csv`);
+ };
+ $('backup').onclick=()=>download(new Blob([JSON.stringify(all,null,2)],{type:'application/json'}),'backup-rekod-gaji.json');
+ $('restoreBtn').onclick=()=>$('restoreFile').click();
+ $('restoreFile').onchange=async e=>{
+   const file=e.target.files[0];if(!file)return;
+   try{const obj=JSON.parse(await file.text());if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error();
+     all={...all,...obj};persist();render();alert('Backup berjaya dimasukkan.');
+   }catch(err){alert('Fail backup tidak sah.');}e.target.value='';
+ };
+ function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
+ render();
+})();
+</script>
+</body>
+</html>
