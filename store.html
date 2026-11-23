@@ -1,1 +1,456 @@
-a
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store</title>
+<style>
+  :root {
+    --bg: #0f1b2d;
+    --surface: #17263c;
+    --surface-2: #1f3250;
+    --accent: #14b8a6;
+    --accent-dark: #0d8f82;
+    --text: #e8eef7;
+    --muted: #8fa3bf;
+    --good: #34d399;
+    --gold: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #060b14;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    background: var(--bg);
+    padding-bottom: 80px;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .burger {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--accent);
+    border: none;
+    display: grid; place-content: center; gap: 5px;
+    cursor: pointer;
+  }
+  .burger span { display: block; width: 22px; height: 3px; background: #fff; border-radius: 2px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.4rem; letter-spacing: .5px; }
+  .logo-mark {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: conic-gradient(from 200deg, var(--accent), #38bdf8, var(--accent));
+    display: grid; place-content: center; font-size: 1.1rem;
+  }
+  .logo b { color: var(--accent); }
+
+  /* Tab kategori */
+  .tabs {
+    display: flex; gap: 22px;
+    overflow-x: auto;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { color: var(--muted); font-size: 1rem; white-space: nowrap; position: relative; cursor: pointer; padding-bottom: 4px; }
+  .tab.active { color: var(--text); border-bottom: 3px solid var(--accent); }
+  .tab .new {
+    position: absolute; top: -12px; right: -14px;
+    background: #ef4444; color: #fff;
+    font-size: .6rem; font-weight: 700;
+    padding: 1px 5px; border-radius: 4px;
+  }
+
+  /* Banner */
+  .banner { position: relative; overflow: hidden; }
+  .slides { display: flex; transition: transform .5s ease; }
+  .slide {
+    min-width: 100%; height: 190px;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 24px;
+  }
+  .slide h2 { font-size: 1.6rem; line-height: 1.15; margin-bottom: 6px; }
+  .slide p { font-size: .9rem; opacity: .9; }
+  .slide .big { font-size: 2.2rem; font-weight: 800; color: var(--gold); }
+  .s1 { background: linear-gradient(120deg, #0f766e, #0e7490 60%, #1e3a8a); }
+  .s2 { background: linear-gradient(120deg, #7c3aed, #db2777); }
+  .s3 { background: linear-gradient(120deg, #b45309, #dc2626); }
+  .dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 7px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.4); }
+  .dot.on { background: #fff; }
+
+  /* Pengumuman berjalan */
+  .ticker {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px;
+    background: #0a1422;
+    overflow: hidden;
+    font-size: .9rem;
+  }
+  .ticker .icon { font-size: 1.3rem; }
+  .marquee { overflow: hidden; white-space: nowrap; flex: 1; }
+  .marquee span { display: inline-block; padding-left: 100%; animation: scroll 18s linear infinite; }
+  @keyframes scroll { to { transform: translateX(-100%); } }
+
+  /* Tombol aksi */
+  .quick { display: flex; gap: 12px; padding: 16px; }
+  .qbtn {
+    flex: 1; padding: 14px; font-size: 1.1rem; font-weight: 600;
+    border-radius: 10px; cursor: pointer; color: var(--text);
+  }
+  .qbtn.outline { background: transparent; border: 2px solid var(--accent); }
+  .qbtn.solid { background: var(--accent); border: 2px solid var(--accent); }
+
+  /* Kartu profil */
+  .profile {
+    margin: 0 16px;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .badge { text-align: center; font-size: .95rem; }
+  .badge-circle {
+    width: 62px; height: 62px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #e5e7eb, #6b7280);
+    display: grid; place-content: center; font-size: 1.6rem;
+    margin-bottom: 4px;
+  }
+  .pinfo { flex: 1; }
+  .pinfo .name { font-size: 1.2rem; margin-bottom: 4px; }
+  .balance { color: var(--good); font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+  .balance button { background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; }
+  .chest { font-size: 2.6rem; }
+
+  /* Seksi baris geser */
+  .section { padding: 24px 16px 0; }
+  .sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .sec-icon { font-size: 1.8rem; }
+  .sec-title { flex: 1; }
+  .sec-title h3 { color: var(--gold); font-size: 1.15rem; letter-spacing: .5px; }
+  .sec-title small { color: var(--muted); font-size: .8rem; }
+  .arrow {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--gold); border: none; color: #1f2937;
+    font-size: 1.1rem; font-weight: 700; cursor: pointer;
+  }
+  .row { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 6px; }
+  .row::-webkit-scrollbar { display: none; }
+  .card {
+    min-width: 145px; background: var(--surface);
+    border-radius: 12px; overflow: hidden;
+  }
+  .card .thumb {
+    height: 100px; position: relative;
+    display: grid; place-content: center; font-size: 3rem;
+  }
+  .card .tag {
+    position: absolute; top: 0; right: 0;
+    background: rgba(0,0,0,.6); padding: 4px 8px;
+    font-size: .75rem; font-weight: 700; border-bottom-left-radius: 8px;
+  }
+  .card .meta {
+    background: var(--surface-2);
+    padding: 10px; display: flex; justify-content: space-between; align-items: center;
+    font-size: .9rem; color: var(--muted);
+  }
+  .card .meta .star { color: var(--muted); cursor: pointer; }
+  .card .meta .star.on { color: var(--gold); }
+  .c1 { background: linear-gradient(135deg, #0f766e, #134e4a); }
+  .c2 { background: linear-gradient(135deg, #7c3aed, #4c1d95); }
+  .c3 { background: linear-gradient(135deg, #b45309, #78350f); }
+  .c4 { background: linear-gradient(135deg, #be123c, #881337); }
+  .c5 { background: linear-gradient(135deg, #1d4ed8, #1e3a8a); }
+
+  /* Halaman-halaman */
+  .view { display: none; }
+  .view.active { display: block; }
+  .page { padding: 24px 16px; }
+  .page h2 { font-size: 1.4rem; margin-bottom: 6px; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+  .chip {
+    padding: 12px; border-radius: 10px; font-size: 1rem; cursor: pointer;
+    background: var(--surface); color: var(--text); border: 2px solid var(--surface-2);
+  }
+  .chip.on { border-color: var(--accent); background: var(--surface-2); }
+  .input {
+    width: 100%; padding: 14px; font-size: 1rem; border-radius: 10px;
+    background: var(--surface); color: var(--text); border: 2px solid var(--surface-2);
+    outline: none; margin-bottom: 14px;
+  }
+  .input:focus { border-color: var(--accent); }
+  .qbtn.full { width: 100%; }
+  .note { margin-top: 14px; color: var(--muted); font-size: .85rem; line-height: 1.4; }
+  .chatbox {
+    background: var(--surface); border-radius: 12px; padding: 14px;
+    height: 360px; overflow-y: auto; margin: 14px 0;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: .95rem; line-height: 1.35; }
+  .bubble.in { background: var(--surface-2); align-self: flex-start; }
+  .bubble.out { background: var(--accent); color: #fff; align-self: flex-end; }
+  .chatform { display: flex; gap: 10px; }
+  .chatform .input { margin-bottom: 0; flex: 1; }
+  .chatform .qbtn { flex: 0 0 auto; padding: 12px 20px; font-size: 1rem; }
+  .acc-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .acc-head .name { font-size: 1.2rem; font-weight: 600; }
+  .menu-list { list-style: none; background: var(--surface); border-radius: 12px; overflow: hidden; }
+  .menu-list li { padding: 16px; border-bottom: 1px solid var(--surface-2); cursor: pointer; }
+  .menu-list li:last-child { border-bottom: none; }
+
+  /* Navigasi bawah */
+  .bottom-nav {
+    position: fixed; bottom: 0;
+    width: 100%; max-width: 480px;
+    display: flex;
+    background: linear-gradient(#134e4a, #0b2f2c);
+    border-top: 1px solid var(--accent-dark);
+    padding: 8px 0 10px;
+  }
+  .nav-item {
+    flex: 1; text-align: center; cursor: pointer;
+    font-size: .95rem; color: #d1fae5;
+  }
+  .nav-item .ico { display: block; font-size: 1.6rem; margin-bottom: 2px; }
+  .nav-item.active { color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    <div class="logo"><div class="logo-mark">🛍️</div><div>EXAMPLE<b>STORE</b></div></div>
+  </header>
+
+  <div class="view active" id="view-beranda">
+  <nav class="tabs">
+    <div class="tab active">Beranda</div>
+    <div class="tab">Fashion</div>
+    <div class="tab">Elektronik</div>
+    <div class="tab">Makanan</div>
+    <div class="tab">Rumah</div>
+    <div class="tab">Hobi<span class="new">BARU</span></div>
+  </nav>
+
+  <section class="banner">
+    <div class="slides" id="slides">
+      <div class="slide s1">
+        <p>PROMO AKHIR TAHUN</p>
+        <h2>Belanja Hemat, Untung Banyak</h2>
+        <div class="big">Diskon 50%</div>
+        <p>23 Nov – 2 Des 2026</p>
+      </div>
+      <div class="slide s2">
+        <p>GRATIS ONGKIR</p>
+        <h2>Ke Seluruh Indonesia</h2>
+        <div class="big">Min. Rp50.000</div>
+      </div>
+      <div class="slide s3">
+        <p>FLASH SALE</p>
+        <h2>Setiap Hari Pukul 12.00</h2>
+        <div class="big">Hingga 70%</div>
+      </div>
+    </div>
+    <div class="dots" id="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+  </section>
+
+  <div class="ticker">
+    <span class="icon">📢</span>
+    <div class="marquee"><span>Belanja mudah, cepat dan fleksibel. Yuk, coba sekarang! ★ Pengiriman gratis untuk pesanan tertentu ★ Cek promo terbaru setiap hari</span></div>
+  </div>
+
+  <div class="quick">
+    <button class="qbtn outline" data-go="saldo">Isi Saldo</button>
+    <button class="qbtn solid" data-go="akun">Transaksi</button>
+  </div>
+
+  <section class="profile">
+    <div class="badge"><div class="badge-circle">⭐</div>Perak</div>
+    <div class="pinfo">
+      <div class="name">username example</div>
+      <div class="balance">Rp 41.000 <button title="Muat ulang">⟳</button> <button title="Lacak">◎</button></div>
+    </div>
+    <div class="chest">🎁</div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head">
+      <div class="sec-icon">👑</div>
+      <div class="sec-title">
+        <h3>PRODUK TERLARIS</h3>
+        <small>(10 Nov, 12:00 – 24 Nov, 12:00, GMT+7)</small>
+      </div>
+      <button class="arrow" data-dir="-1">‹</button>
+      <button class="arrow" data-dir="1">›</button>
+    </div>
+    <div class="row" id="row1">
+      <div class="card"><div class="thumb c1">🎧<span class="tag">-20%</span></div><div class="meta">Headset Pro <span class="star">★</span></div></div>
+      <div class="card"><div class="thumb c2">👟<span class="tag">-35%</span></div><div class="meta">Sepatu Lari <span class="star">★</span></div></div>
+      <div class="card"><div class="thumb c3">☕<span class="tag">-15%</span></div><div class="meta">Kopi Susu <span class="star">★</span></div></div>
+      <div class="card"><div class="thumb c4">👜<span class="tag">-40%</span></div><div class="meta">Tas Kulit <span class="star">★</span></div></div>
+      <div class="card"><div class="thumb c5">⌚<span class="tag">-25%</span></div><div class="meta">Jam Tangan <span class="star">★</span></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head">
+      <div class="sec-icon">🤍</div>
+      <div class="sec-title"><h3>FAVORIT SAYA</h3></div>
+      <button class="arrow" data-dir="-1" data-target="row2">‹</button>
+      <button class="arrow" data-dir="1" data-target="row2">›</button>
+    </div>
+    <div class="row" id="row2">
+      <div class="card"><div class="thumb c5">📱</div><div class="meta">Ponsel <span class="star on">★</span></div></div>
+      <div class="card"><div class="thumb c1">🪴</div><div class="meta">Tanaman <span class="star on">★</span></div></div>
+      <div class="card"><div class="thumb c3">📚</div><div class="meta">Buku <span class="star on">★</span></div></div>
+    </div>
+  </section>
+
+  </div><!-- /view-beranda -->
+
+  <!-- Halaman Isi Saldo (demo, tidak terhubung ke pembayaran) -->
+  <div class="view" id="view-saldo">
+    <div class="page">
+      <h2>Isi Saldo</h2>
+      <p class="muted">Pilih nominal atau ketik sendiri.</p>
+      <div class="chips" id="chips">
+        <button class="chip">Rp10.000</button>
+        <button class="chip">Rp25.000</button>
+        <button class="chip">Rp50.000</button>
+        <button class="chip">Rp100.000</button>
+      </div>
+      <input class="input" id="nominal" type="text" inputmode="numeric" placeholder="Nominal lain, mis. 75000">
+      <button class="qbtn solid full" id="lanjut">Lanjutkan</button>
+      <p class="note" id="saldoNote">Ini hanya tampilan demo, belum terhubung ke sistem pembayaran.</p>
+    </div>
+  </div>
+
+  <!-- Halaman Live Chat (demo, balasan otomatis lokal) -->
+  <div class="view" id="view-chat">
+    <div class="page">
+      <h2>Live Chat</h2>
+      <div class="chatbox" id="chatbox">
+        <div class="bubble in">Halo! Ada yang bisa kami bantu?</div>
+      </div>
+      <form class="chatform" id="chatform">
+        <input class="input" id="chatinput" type="text" placeholder="Tulis pesan..." autocomplete="off">
+        <button class="qbtn solid" type="submit">Kirim</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Halaman Akun -->
+  <div class="view" id="view-akun">
+    <div class="page">
+      <div class="acc-head">
+        <div class="badge-circle">👤</div>
+        <div><div class="name">example username</div><div class="muted">username@example.com</div></div>
+      </div>
+      <ul class="menu-list">
+        <li>📦 Pesanan Saya</li>
+        <li>📍 Alamat Pengiriman</li>
+        <li>❤️ Produk Favorit</li>
+        <li>⚙️ Pengaturan</li>
+        <li>🚪 Keluar</li>
+      </ul>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-view="beranda"><span class="ico">🏠</span>Beranda</div>
+    <div class="nav-item" data-view="saldo"><span class="ico">💳</span>Isi Saldo</div>
+    <div class="nav-item" data-view="chat"><span class="ico">💬</span>Live Chat</div>
+    <div class="nav-item" data-view="akun"><span class="ico">👤</span>Akun</div>
+  </nav>
+
+</div>
+
+<script>
+  // Slider banner otomatis
+  const slides = document.getElementById('slides');
+  const dots = document.querySelectorAll('#dots .dot');
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % dots.length;
+    slides.style.transform = `translateX(-${i * 100}%)`;
+    dots.forEach((d, n) => d.classList.toggle('on', n === i));
+  }, 3500);
+
+  // Tombol panah geser baris kartu
+  document.querySelectorAll('.arrow').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = document.getElementById(btn.dataset.target || 'row1');
+      row.scrollBy({ left: btn.dataset.dir * 160 });
+    });
+  });
+
+  // Tab dan favorit
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+  document.querySelectorAll('.star').forEach(s => s.addEventListener('click', () => s.classList.toggle('on')));
+  // Pindah halaman di dalam situs (tanpa tautan keluar)
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => showView(n.dataset.view)));
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => showView(b.dataset.go)));
+
+  // Halaman Isi Saldo (demo)
+  const nominal = document.getElementById('nominal');
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    nominal.value = c.textContent.replace(/\D/g, '');
+  }));
+  document.getElementById('lanjut').addEventListener('click', () => {
+    const v = nominal.value.replace(/\D/g, '');
+    document.getElementById('saldoNote').textContent = v
+      ? 'Demo: nominal Rp' + Number(v).toLocaleString('id-ID') + ' dipilih. Belum terhubung ke sistem pembayaran.'
+      : 'Pilih atau isi nominal terlebih dahulu.';
+  });
+
+  // Halaman Live Chat (demo, balasan otomatis lokal)
+  const chatbox = document.getElementById('chatbox');
+  function addBubble(text, type) {
+    const b = document.createElement('div');
+    b.className = 'bubble ' + type;
+    b.textContent = text;
+    chatbox.appendChild(b);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+  document.getElementById('chatform').addEventListener('submit', e => {
+    e.preventDefault();
+    const inp = document.getElementById('chatinput');
+    const t = inp.value.trim();
+    if (!t) return;
+    addBubble(t, 'out');
+    inp.value = '';
+    setTimeout(() => addBubble('Terima kasih, pesan Anda sudah kami terima. (balasan otomatis Bot)', 'in'), 700);
+  });
+</script>
+</body>
+</html>
